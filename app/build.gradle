@@ -1,0 +1,254 @@
+/*
+ * Copyright 2017 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import app.tivi.buildsrc.Libs
+
+ext {
+    ci = System.getenv("CI") == "true"
+}
+
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-kapt'
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
+apply plugin: 'kotlin-android-extensions'
+androidExtensions {
+    experimental = true
+}
+
+apply plugin: 'com.getkeepsafe.dexcount'
+dexcount {
+    // Only run the method counter on CI
+    enabled = ci
+}
+
+apply plugin: 'com.github.triplet.play'
+play {
+    track = 'internal'
+    defaultToAppBundles = true
+    serviceAccountCredentials = rootProject.file('release/play-account.json')
+}
+
+apply plugin: 'com.google.android.gms.oss-licenses-plugin'
+
+apply plugin: "androidx.navigation.safeargs.kotlin"
+
+def appVersionCode = propOrDef("tivi.versioncode", 17) as Integer
+println("APK version code: " + appVersionCode)
+
+def useReleaseKeystore = rootProject.file("release/app-release.jks").exists()
+
+android {
+    compileSdkVersion buildConfig.compileSdk
+
+    defaultConfig {
+        applicationId "app.tivi"
+        minSdkVersion buildConfig.minSdk
+        targetSdkVersion buildConfig.targetSdk
+        versionCode appVersionCode
+        versionName "0.4.1"
+
+        // For now we're sticking to just shipping EN
+        resConfigs "en"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "TRAKT_CLIENT_ID", "\"" + propOrDef("TIVI_TRAKT_CLIENT_ID", "") + "\""
+        buildConfigField "String", "TRAKT_CLIENT_SECRET", "\"" + propOrDef("TIVI_TRAKT_CLIENT_SECRET", "") + "\""
+        buildConfigField "String", "TMDB_API_KEY", "\"" + propOrDef("TIVI_TMDB_API_KEY", "") + "\""
+    }
+
+    signingConfigs {
+        debug {
+            storeFile rootProject.file("release/app-debug.jks")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+
+        release {
+            if (useReleaseKeystore) {
+                storeFile rootProject.file("release/app-release.jks")
+                storePassword propOrDef('TIVI_RELEASE_KEYSTORE_PWD', "")
+                keyAlias "tivi"
+                keyPassword propOrDef('TIVI_RELEASE_KEY_PWD', "")
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    dexOptions {
+        // Don't pre-dex on CI
+        preDexLibraries !ci
+    }
+
+    lintOptions {
+        // Disable lintVital. Not needed since lint is run on CI
+        checkReleaseBuilds false
+        // Allow lint to check dependencies
+        checkDependencies true
+        // Ignore any tests
+        ignoreTestSources true
+
+        // Lint doesn't seem to handle Kotlin int types + string format very well
+        disable 'StringFormatMatches'
+        // Seems to be broken in 4.0.0-alpha09 https://issuetracker.google.com/issues/148172219
+        disable 'Instantiatable'
+    }
+
+    buildFeatures {
+        dataBinding true
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+    packagingOptions {
+        // Exclude AndroidX version files
+        exclude 'META-INF/*.version'
+        // Exclude consumer proguard files
+        exclude 'META-INF/proguard/*'
+        // Exclude the Firebase/Fabric/other random properties files
+        exclude '/*.properties'
+        exclude 'fabric/*.properties'
+        exclude 'META-INF/*.properties'
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            versionNameSuffix "-dev"
+            applicationIdSuffix ".debug"
+        }
+
+        release {
+            if (useReleaseKeystore) {
+                signingConfig signingConfigs.release
+            } else {
+                // Otherwise just use the debug keystore (this is mainly for PR CI builds)
+                signingConfig signingConfigs.debug
+            }
+            shrinkResources true
+            minifyEnabled true
+            proguardFiles 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation project(':base')
+    implementation project(':base-android')
+    implementation project(':common-ui-view')
+    implementation project(':common-epoxy')
+    implementation project(':common-imageloading')
+    implementation project(':common-databinding')
+    implementation project(':common-entrygrid')
+    implementation project(':data')
+    implementation project(':data-android')
+    implementation project(':trakt')
+    implementation project(':trakt-auth')
+    implementation project(':tmdb')
+    implementation project(':domain')
+    implementation project(':tasks')
+
+    implementation project(':ui-discover')
+    implementation project(':ui-showdetails')
+    implementation project(':ui-episodedetails')
+    implementation project(':ui-followed')
+    implementation project(':ui-watched')
+    implementation project(':ui-popular')
+    implementation project(':ui-trending')
+    implementation project(':ui-recommended')
+    implementation project(':ui-search')
+
+    implementation Libs.AndroidX.Lifecycle.extensions
+    implementation Libs.AndroidX.Lifecycle.viewmodelKtx
+
+    implementation Libs.AndroidX.appcompat
+    implementation Libs.AndroidX.browser
+    implementation Libs.AndroidX.emoji
+    implementation Libs.AndroidX.preference
+    implementation Libs.AndroidX.Fragment.fragmentKtx
+    implementation Libs.AndroidX.Navigation.fragment
+    implementation Libs.AndroidX.Navigation.ui
+
+    implementation Libs.Google.material
+
+    implementation Libs.Insetter.ktx
+
+    implementation Libs.threeTenAbp
+
+    implementation Libs.timber
+
+    implementation Libs.Kotlin.stdlib
+    implementation Libs.Kotlin.reflect
+
+    implementation Libs.Coroutines.core
+    implementation Libs.Coroutines.android
+
+    implementation Libs.Dagger.androidSupport
+    kapt Libs.Dagger.compiler
+    kapt Libs.Dagger.androidProcessor
+
+    compileOnly Libs.AssistedInject.annotationDagger2
+    kapt Libs.AssistedInject.processorDagger2
+
+    implementation Libs.mvRx
+
+    implementation Libs.Google.firebaseCore
+    // implementation Libs.Google.crashlytics
+    implementation Libs.Google.openSourceLicensesLibrary
+
+    debugImplementation Libs.leakCanary
+
+    testImplementation Libs.junit
+    testImplementation Libs.robolectric
+    testImplementation Libs.AndroidX.Test.core
+    testImplementation Libs.AndroidX.Test.runner
+    testImplementation Libs.AndroidX.Test.rules
+    testImplementation Libs.AndroidX.Test.espressoCore
+}
+
+android.applicationVariants.all { variant ->
+    task "open${variant.name.capitalize()}" {
+        dependsOn "install${variant.name.capitalize()}"
+
+        doLast {
+            exec {
+                commandLine "adb shell monkey -p ${variant.applicationId} -c android.intent.category.LAUNCHER 1".split(" ")
+            }
+        }
+    }
+}
+
+if (file("google-services.json").exists()) {
+    apply plugin: 'com.google.gms.google-services'
+    // apply plugin: 'com.google.firebase.crashlytics'
+}

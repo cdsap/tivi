@@ -1,0 +1,105 @@
+/*
+ * Copyright 2017 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+import app.tivi.buildsrc.Libs
+import app.tivi.buildsrc.Versions
+
+buildscript {
+    ext.buildConfig = [
+            'compileSdk': 29,
+            'minSdk'    : 23,
+            'targetSdk' : 29,
+    ]
+
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath Libs.androidGradlePlugin
+
+        classpath Libs.Kotlin.gradlePlugin
+        classpath Libs.Kotlin.extensions
+
+        classpath Libs.dexcountGradlePlugin
+        classpath Libs.playPublisherPlugin
+
+        classpath Libs.Google.gmsGoogleServices
+        classpath Libs.Google.crashlyticsGradle
+        classpath Libs.Google.openSourceLicensesPlugin
+
+        classpath Libs.AndroidX.Navigation.safeArgs
+        classpath 'gradle.plugin.net.idlestate:gradle-redis-build-cache:1.2.1'
+    }
+}
+
+plugins {
+    id 'com.diffplug.gradle.spotless' version '3.28.0'
+    id 'com.github.ben-manes.versions' version '0.28.0'
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://androidx-dev-prod.appspot.com/snapshots/builds/6342451/artifacts/ui/repository/' }
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+        mavenLocal()
+    }
+}
+
+subprojects {
+    apply plugin: 'com.diffplug.gradle.spotless'
+    spotless {
+        kotlin {
+            target "**/*.kt"
+            ktlint(Versions.ktlint)
+            licenseHeaderFile project.rootProject.file('spotless/copyright.kt')
+        }
+    }
+
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+        kotlinOptions {
+            // Treat all Kotlin warnings as errors
+            allWarningsAsErrors = true
+
+            // Enable experimental coroutines APIs, including Flow
+            freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
+            freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.FlowPreview"
+            freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.FlowPreview"
+            freeCompilerArgs += "-Xopt-in=kotlin.Experimental"
+
+            // Set JVM target to 1.8
+            jvmTarget = "1.8"
+        }
+    }
+}
+
+Object propOrDef(String propertyName, Object defaultValue) {
+    def propertyValue = project.properties[propertyName]
+    return propertyValue != null ? propertyValue : defaultValue
+}
+
+
+buildScan {
+    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+    termsOfServiceAgree = 'yes'
+}

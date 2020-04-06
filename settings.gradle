@@ -1,0 +1,83 @@
+/*
+ * Copyright 2017 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+buildscript {
+    repositories {
+        mavenLocal()
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+
+    dependencies {
+        classpath 'gradle.plugin.net.idlestate:gradle-redis-build-cache:1.2.1'
+    }
+}
+
+plugins {
+    id 'com.gradle.enterprise' version '3.0'
+}
+
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+        termsOfServiceAgree = 'yes'
+    }
+}
+buildCache {
+    local {
+        enabled = false
+    }
+    registerBuildCacheService(net.idlestate.gradle.caching.RedisBuildCache.class,
+            net.idlestate.gradle.caching.RedisBuildCacheServiceFactory.class)
+
+    remote( net.idlestate.gradle.caching.RedisBuildCache.class ) {
+        host = '35.243.212.3'
+        port = 6379
+        enabled = true
+        push = true
+    }
+}
+
+include ':base'
+include ':base-android'
+include ':common-ui-view'
+include ':common-ui-resources'
+include ':common-ui-compose'
+include ':common-layouts'
+include ':common-epoxy'
+include ':common-imageloading'
+include ':common-databinding'
+include ':common-entrygrid'
+include ':data'
+include ':data-android'
+include ':trakt'
+include ':trakt-auth'
+include ':tmdb'
+include ':tasks'
+include ':domain'
+include ':ui-discover'
+include ':ui-showdetails'
+include ':presenter-episodedetails'
+include ':ui-episodedetails'
+include ':ui-episodedetails-compose'
+include ':ui-followed'
+include ':ui-watched'
+include ':ui-trending'
+include ':ui-popular'
+include ':ui-recommended'
+include ':ui-search'
+include ':app'
