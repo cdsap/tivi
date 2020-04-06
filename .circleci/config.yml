@@ -1,0 +1,26 @@
+version: 2.1
+executor: machine
+jobs:
+  build:
+    machine:
+      image: circleci/classic:latest
+
+    working_directory: ~/repo
+
+
+    environment:
+      JVM_OPTS: -Xmx5G
+      TERM: dumb
+
+    steps:
+      - checkout
+      - run:
+          name: build
+          command: ./gradlew asseembleDebug --scan --stacktrace --info
+
+
+workflows:
+  version: 2.1
+  build-snap:
+    jobs:
+      - build
