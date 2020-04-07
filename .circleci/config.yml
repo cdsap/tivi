@@ -2,7 +2,7 @@ version: 2.1
 executor: machine
 jobs:
   build:
-    machine:
+    docker:
       image: circleci/android:api-28
 
     working_directory: ~/repo
