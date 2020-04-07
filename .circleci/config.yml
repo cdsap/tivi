@@ -3,11 +3,8 @@ executor: machine
 jobs:
   build:
     docker:
-      image: circleci/android:api-28
-
+      - image: circleci/android:api-28
     working_directory: ~/repo
-
-
     environment:
       JVM_OPTS: -Xmx5G
       TERM: dumb
