@@ -16,7 +16,7 @@ jobs:
       - checkout
       - run:
           name: build
-          command: ./gradlew asseembleDebug --scan --stacktrace --info
+          command: ./gradlew app:assembleDebug --scan --stacktrace --info
 
 
 workflows:
