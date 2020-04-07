@@ -3,7 +3,7 @@ executor: machine
 jobs:
   build:
     machine:
-      image: circleci/classic:latest
+      image: circleci/android:api-28
 
     working_directory: ~/repo
 
