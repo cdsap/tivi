@@ -46,7 +46,7 @@ buildCache {
 
     remote( net.idlestate.gradle.caching.RedisBuildCache.class ) {
      //   host = 'af05416c819d24978ab1035cc521da5a-677725875.us-east-2.elb.amazonaws.com'
-        host = '34.73.226.4'
+        host = 'a0adf2013f3f547b99fc5e390cba7b58-1731794645.us-east-2.elb.amazonaws.com'
         port = 6379
         enabled = true
         push = true
